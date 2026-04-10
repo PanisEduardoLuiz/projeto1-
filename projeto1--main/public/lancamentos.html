@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Finanças</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Listagem de Lançamentos</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <button id="btn-abrir-modal" class="btn-novo">+ Novo Lançamento</button>
+        </div>
+        <div class="filtros" style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center;">
+            <input type="text" id="filtro-descricao" placeholder="Buscar por descrição..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="date" id="filtro-data" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;" title="Filtrar por data específica">
+            <select id="filtro-tipo" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="">Todos os Tipos</option>
+                <option value="RECEITA">Receita</option>
+                <option value="DESPESA">Despesa</option>
+            </select>
+            <select id="filtro-situacao" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <option value="">Todas as Situações</option>
+                <option value="CONCLUIDO">Concluído</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="PAGO">Pago</option>
+            </select>
+            <button id="btn-limpar-filtros" style="padding: 8px 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Limpar</button>
+            <button id="btn-exportar-todos" style="padding: 8px 16px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Todos)</button>
+            <button id="btn-exportar-filtrados" style="padding: 8px 16px; background-color: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Filtrados)</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Tipo</th><th>Situação</th><th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                </tbody>
+        </table>
+    </div>
+
+    <!-- Modal Novo/Editar -->
+    <div id="modal-lancamento" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-titulo">Novo Lançamento</h2>
+            <form id="form-lancamento">
+                <input type="hidden" id="form-id">
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="form-descricao" required>
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="form-data" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="form-valor" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="form-tipo" required>
+                        <option value="RECEITA">Receita</option>
+                        <option value="DESPESA">Despesa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Situação</label>
+                    <select id="form-situacao" required>
+                        <option value="CONCLUIDO">Concluído</option>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="PAGO">Pago</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-fechar-modal" class="btn-cancelar">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

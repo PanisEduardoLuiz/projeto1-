@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: db_financas
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: financas
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
