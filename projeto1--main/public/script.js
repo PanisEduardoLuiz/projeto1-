@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ---- Lógica de Envio de E-mail ----
-    async function enviarPDFEmail(dados, titulo) {
+    async function enviarPDFEmail(dados, titulo, comFiltros = false) {
         const destino = prompt('Para qual e-mail deseja enviar o relatório?');
         if (!destino) return; // cancelou
 
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const resp = await fetch('/api/email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pdfBase64: pdfDataUri, emailDestino: destino, assunto: titulo })
+                body: JSON.stringify({ pdfBase64: pdfDataUri, emailDestino: destino, assunto: titulo, comFiltros })
             });
 
             if (resp.ok) {
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('btn-email-todos').addEventListener('click', () => {
-        enviarPDFEmail(todosLancamentos, 'Relatorio Financeiro Completo');
+        enviarPDFEmail(todosLancamentos, 'Relatorio Financeiro Completo', false);
     });
 
     document.getElementById('btn-email-filtrados').addEventListener('click', () => {
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Você precisa aplicar pelo menos um filtro antes de enviar o relatório filtrado.');
             return;
         }
-        enviarPDFEmail(dadosAtuaisFiltrados, 'Relatorio Financeiro Filtrado');
+        enviarPDFEmail(dadosAtuaisFiltrados, 'Relatorio Financeiro Filtrado', true);
     });
 
     // ---- Lógica do Modal CRUD ----

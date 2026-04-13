@@ -35,57 +35,108 @@ Quando você clona ou transfere este código para uma nova VM, o sistema precisa
 
 Siga os exatos passos abaixo na aba do terminal da raiz do seu projeto:
 
-### 1. Iniciar o Banco de Dados (PostgreSQL via Docker)
-Nós usamos o Docker para empacotar o banco isoladamente na **porta 15432**.
+### 1. Instalar Node.js e npm (caso ainda não tenha)
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y nodejs npm
+
+# Verificar se instalou corretamente
+node -v
+npm -v
+```
+
+### 2. Instalar Docker e Docker Compose (caso ainda não tenha)
+```bash
+# Ubuntu/Debian
+sudo apt install -y docker.io docker-compose-v2
+
+# Dar permissão ao seu usuário para rodar docker sem sudo
+sudo usermod -aG docker $USER
+
+# Reinicie o terminal ou faça logout/login para aplicar a permissão
+```
+
+### 3. Inicializar o projeto Node (já feito, mas caso precise recriar)
+```bash
+npm init -y
+```
+
+### 4. Instalar TODAS as dependências do projeto (um por um)
+```bash
+# Servidor web
+npm install express
+
+# Driver do banco PostgreSQL
+npm install pg
+
+# Leitura de variáveis de ambiente (.env)
+npm install dotenv
+
+# API de envio de e-mails
+npm install resend
+
+# (Opcional/Legado) Transporte SMTP de e-mails
+npm install nodemailer
+```
+
+> **💡 Atalho:** Se preferir instalar tudo de uma vez só, basta rodar:
+> ```bash
+> npm install
+> ```
+> Esse comando lê o `package.json` e instala todos os pacotes automaticamente.
+
+### 5. Criar o arquivo `.env`
+Crie o arquivo `.env` na raiz do projeto conforme descrito na seção "Configuração do Envio de E-mail" acima.
+
+### 6. Subir o Banco de Dados (PostgreSQL via Docker)
 ```bash
 docker compose up -d
 ```
-*(A tag `-d` faz o container rodar desligado da sua tela, atrelado ao background da máquina. Ele subirá usando a configuração definida no `docker-compose.yml` e script inicial do `init.sql`).*
+*(A tag `-d` faz o container rodar em background. Ele usa a configuração do `docker-compose.yml` e o script `init.sql`).*
 
-### 2. Baixar as Dependências da API
-O projeto usa pacotes como o Express (servidor), PG (driver do Postgres) e Resend (envio de e-mails). Instale-os com:
-```bash
-npm install
-```
-
-### 3. Criar o arquivo `.env`
-Crie o arquivo `.env` na raiz do projeto conforme descrito na seção "Configuração do Envio de E-mail" acima.
-
-### 4. Instalar o PM2 (Process Manager)
-O PM2 é o grande responsável por manter sua aplicação web viva 24/7. Instale-o de forma global no seu sistema operacional:
+### 7. Instalar o PM2 (Process Manager — mantém a API viva 24/7)
 ```bash
 npm install -g pm2
 ```
-*(Se você receber erros de permissão de pasta no linux, talvez seja necessário rodar com `sudo` na frente: `sudo npm install -g pm2`).*
+*(Se der erro de permissão no Linux, use `sudo npm install -g pm2`).*
 
-### 5. Ligar a API Finanças com o PM2
-Agora que tudo está pronto, vamos subir o `server.js` chamando o PM2.
+### 8. Iniciar a API com o PM2
 ```bash
 pm2 start server.js --name "projeto-financas"
 ```
-🎉 **A partir deste exato momento, sua API já está disponível no ar via IP da sua VM (ex: `http://177.44.248.113:8080`) e você já pode fechar o seu terminal em paz!**
+🎉 **Pronto! Sua API está no ar em `http://localhost:8080` (ou pelo IP da VM). Pode fechar o terminal em paz!**
 
-### 6. Manter o programa ativo entre os Reboots (Opcional)
-Se a sua Máquina Virtual desligar ou for reiniciada, para não perder os processos do PM2 salvos, primeiro grave sua lista atual de servidores virtuais:
+### 9. Manter ativo após reiniciar a máquina (Opcional)
 ```bash
 pm2 save
-```
-E em seguida ative a inicialização do gerenciador sob o relógio do Host:
-```bash
 pm2 startup
 ```
-*(O sistema irá cuspir um comando gigante da cor verde/amarela começando com `sudo ...`. Copie ele inteiro, cole no console e aperte ENTER para registrar o serviço nativo no kernel).*
+*(O sistema vai mostrar um comando com `sudo ...`. Copie e cole para registrar o serviço no boot).*
 
 ---
 
 ## 📧 Funcionalidade de E-mail
 
-O dashboard possui botões para enviar relatórios por e-mail:
+O dashboard possui botões para enviar relatórios por e-mail e também **disparos automáticos**:
 
-- **Enviar Todos** — Gera um PDF com todos os lançamentos e envia por e-mail.
-- **Enviar Filtrados** — Gera um PDF apenas com os lançamentos filtrados e envia por e-mail.
+- **Envio Automático (Triggers)** — Sempre que um Lançamento for **criado ou editado**, a API dispara no *background* um e-mail de notificação. Nas edições, as informações antigas e novas são apresentadas e comparadas magicamente.
+- **Enviar Todos / Filtrados** — A partir do site, é possível gerar relatórios em PDF estáticos e enviá-los em anexo.
 
-O e-mail é enviado via **API Resend** (HTTP), sem depender de servidores SMTP. O destinatário recebe o PDF como anexo com um corpo em HTML formatado.
+As comunicações utilizam a **API Resend** (HTTP), de forma assíncrona, para jamais travarem as requisições principais do usuário!
+
+---
+
+## 🧪 Testes Unitários Nativos (Node.js)
+
+O projeto conta com o diretório `tests/` contendo o arquivo `api.test.js` com um total de **20 testes unitários** automatizados. Eles garantem a segurança de ponta-a-ponta nos serviços (Bloqueios do CRUD de POST, PUT, DELETE, GET e Tratamentos de Dados).
+
+Os testes foram escritos inteiramente com a ferramenta nativa do próprio Node (`node:test`), ou seja, **não exigem instalação de pacotes de testes extra** (como Jest).
+
+Para rodá-los e ter a validação total no terminal da sua máquina, certifique-se de que a aplicação `server.js` está ativa e rode numa **nova aba** de terminal:
+```bash
+node --test tests/api.test.js
+```
 
 ---
 

@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { Resend } = require('resend');
+
+// Inicializa o Resend com a chave do .env
+const resend = new Resend(process.env.RESEND_API_KEY);
+const EMAIL_PADRAO = 'luiz.panis@universo.univates.br';
 
 // Rota GET: Buscar todos os lançamentos
 router.get('/', async (req, res) => {
@@ -23,6 +28,26 @@ router.post('/', async (req, res) => {
     `;
     const values = [descricao, data_lancamento, valor, tipo_lancamento, situacao];
     const result = await pool.query(query, values);
+
+    // Tenta enviar o e-mail de alerta não bloqueante (não impede o response em caso de falha)
+    try {
+        const valorFormatado = Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        await resend.emails.send({
+            from: 'Notificações <onboarding@resend.dev>',
+            to: EMAIL_PADRAO,
+            subject: 'Novo Lançamento Criado',
+            html: `<p>Um novo lançamento foi criado no sistema.</p>
+                   <ul>
+                     <li><strong>Descrição:</strong> ${descricao}</li>
+                     <li><strong>Valor:</strong> ${valorFormatado}</li>
+                     <li><strong>Tipo:</strong> ${tipo_lancamento}</li>
+                     <li><strong>Situação:</strong> ${situacao}</li>
+                   </ul>`
+        });
+    } catch(emailErr) {
+        console.error('Erro ao enviar e-mail de criação:', emailErr);
+    }
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -35,6 +60,10 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { descricao, data_lancamento, valor, tipo_lancamento, situacao } = req.body;
   try {
+    // Busca o valor anterior para comparar no e-mail
+    const prevResult = await pool.query('SELECT * FROM lancamento WHERE id = $1', [id]);
+    const prevLancamento = prevResult.rows[0];
+
     const query = `
       UPDATE lancamento 
       SET descricao = $1, data_lancamento = $2, valor = $3, tipo_lancamento = $4, situacao = $5
@@ -45,6 +74,39 @@ router.put('/:id', async (req, res) => {
     
     if (result.rows.length === 0) {
       return res.status(404).send('Lançamento não encontrado');
+    }
+
+    // Tenta enviar o e-mail de alerta não bloqueante caso encontre o registro anterior
+    if (prevLancamento) {
+        try {
+            const valorFormatado = Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const valorAntigoFormatado = Number(prevLancamento.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            let infoAlteracoes = '';
+            if (prevLancamento.valor != valor) {
+                infoAlteracoes += `<li><strong>Valor:</strong> ${valorFormatado} (era ${valorAntigoFormatado})</li>`;
+            } else {
+                infoAlteracoes += `<li><strong>Valor:</strong> ${valorFormatado} (sem mudança)</li>`;
+            }
+            if (prevLancamento.situacao !== situacao) {
+                infoAlteracoes += `<li><strong>Situação:</strong> ${situacao} (era ${prevLancamento.situacao})</li>`;
+            } else {
+                infoAlteracoes += `<li><strong>Situação:</strong> ${situacao}</li>`;
+            }
+
+            await resend.emails.send({
+                from: 'Notificações <onboarding@resend.dev>',
+                to: EMAIL_PADRAO,
+                subject: 'Lançamento Editado',
+                html: `<p>O lançamento <strong>${descricao}</strong> (ID: ${id}) foi editado.</p>
+                       <ul>
+                         ${infoAlteracoes}
+                         <li><strong>Tipo:</strong> ${tipo_lancamento}</li>
+                       </ul>`
+            });
+        } catch(emailErr) {
+            console.error('Erro ao enviar e-mail de edição:', emailErr);
+        }
     }
     
     res.json(result.rows[0]);

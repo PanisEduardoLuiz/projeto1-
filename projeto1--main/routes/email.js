@@ -10,24 +10,31 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const EMAIL_PADRAO = 'luiz.panis@universo.univates.br';
 
 router.post('/', async (req, res) => {
-    const { pdfBase64, emailDestino, assunto } = req.body;
+    const { pdfBase64, emailDestino, assunto, comFiltros } = req.body;
 
     if (!pdfBase64) return res.status(400).send('Arquivo PDF é obrigatório');
 
     try {
         const base64Data = pdfBase64.includes('base64,') ? pdfBase64.split('base64,')[1] : pdfBase64;
-        const buffer = Buffer.from(base64Data, 'base64');
 
-        // Disparo via Resend usando HTML e Anexo
+        // Monta título e mensagem de acordo com o tipo de relatório
+        const tituloEmail = comFiltros
+            ? 'Relatório Financeiro Filtrado'
+            : 'Relatório Financeiro Completo';
+
+        const mensagemCorpo = comFiltros
+            ? 'Seu relatório financeiro <strong>com filtros</strong> está disponível.'
+            : 'Seu relatório financeiro <strong>completo</strong> está disponível.';
+
         const { data, error } = await resend.emails.send({
             from: 'Relatorios <onboarding@resend.dev>',
             to: emailDestino || EMAIL_PADRAO,
-            subject: assunto || 'Relatório Financeiro',
+            subject: assunto || tituloEmail,
             html: `
                 <div style="font-family: sans-serif; color: #333;">
-                    <h2>Seu Relatório Financeiro</h2>
-                    <p>Olá! Conforme solicitado, segue em anexo o relatório exportado do <strong>Sistema de Finanças</strong>.</p>
-                    <p>O arquivo está no formato PDF.</p>
+                    <h2>${tituloEmail}</h2>
+                    <p>Olá! ${mensagemCorpo}</p>
+                    <p>Confira o arquivo em anexo no formato PDF.</p>
                     <br>
                     <hr>
                     <p style="font-size: 0.8em; color: #777;">Este é um e-mail automático, por favor não responda.</p>
@@ -36,7 +43,8 @@ router.post('/', async (req, res) => {
             attachments: [
                 {
                     filename: 'relatorio.pdf',
-                    content: buffer,
+                    content: Buffer.from(base64Data, 'base64'),
+                    contentType: 'application/pdf',
                 }
             ]
         });
