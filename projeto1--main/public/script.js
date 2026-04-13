@@ -134,6 +134,67 @@ document.addEventListener('DOMContentLoaded', () => {
         gerarPDF(dadosAtuaisFiltrados, 'Relatorio_Filtrado');
     });
 
+    // ---- Lógica de Envio de E-mail ----
+    async function enviarPDFEmail(dados, titulo) {
+        const destino = prompt('Para qual e-mail deseja enviar o relatório?');
+        if (!destino) return; // cancelou
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        doc.text(titulo, 14, 15);
+        const colunas = [["ID", "Descrição", "Data", "Valor", "Tipo", "Situação"]];
+        const linhas = dados.map(lanc => [
+            lanc.id,
+            lanc.descricao,
+            new Date(lanc.data_lancamento).toLocaleDateString('pt-BR'),
+            Number(lanc.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+            lanc.tipo_lancamento,
+            lanc.situacao
+        ]);
+
+        doc.autoTable({ startY: 20, head: colunas, body: linhas, theme: 'striped', headStyles: { fillColor: [33, 150, 243] }});
+
+        const pdfDataUri = doc.output('datauristring');
+        
+        alert('Enviando o e-mail no background... aguarde (não feche a página).');
+        
+        try {
+            const resp = await fetch('/api/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pdfBase64: pdfDataUri, emailDestino: destino, assunto: titulo })
+            });
+
+            if (resp.ok) {
+                const result = await resp.json();
+                alert(result.message || 'E-mail enviado com sucesso para o destinatário!');
+            } else {
+                alert('Falha interna ao tentar processar o e-mail.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Erro de comunicação com a API de e-mail.');
+        }
+    }
+
+    document.getElementById('btn-email-todos').addEventListener('click', () => {
+        enviarPDFEmail(todosLancamentos, 'Relatorio Financeiro Completo');
+    });
+
+    document.getElementById('btn-email-filtrados').addEventListener('click', () => {
+        const textoDescricao = filtroDescricao.value.trim();
+        const dataSelecionada = filtroData.value;
+        const tipoSelecionado = filtroTipo.value;
+        const situacaoSelecionada = filtroSituacao.value;
+
+        if (!textoDescricao && !dataSelecionada && !tipoSelecionado && !situacaoSelecionada) {
+            alert('Você precisa aplicar pelo menos um filtro antes de enviar o relatório filtrado.');
+            return;
+        }
+        enviarPDFEmail(dadosAtuaisFiltrados, 'Relatorio Financeiro Filtrado');
+    });
+
     // ---- Lógica do Modal CRUD ----
     function fecharModal() {
         modalLancamento.style.display = 'none';

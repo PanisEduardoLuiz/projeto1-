@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
@@ -5,8 +6,8 @@ const path = require('path');
 const app = express();
 const port = 8080; // Alterado para 8080 para evitar bloqueios de permissão
 
-// Middleware necessário para ler dados enviados pelo formulário de login (JSON)
-app.use(express.json());
+// Middleware necessário para ler dados enviados pelo formulário de login (JSON) e suportar string Base64 do PDF
+app.use(express.json({ limit: '10mb' }));
 
 // (a conexão agora fica em config/db.js)
 
@@ -29,7 +30,9 @@ app.post('/api/login', (req, res) => {
 
 // Rotas modulares
 const lancamentosRoutes = require('./routes/lancamentos');
+const emailRoutes = require('./routes/email');
 app.use('/api/lancamentos', lancamentosRoutes);
+app.use('/api/email', emailRoutes);
 
 // Inicia o servidor
 app.listen(port, () => console.log(`Servidor rodando na porta ${port}`));

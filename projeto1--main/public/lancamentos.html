@@ -23,11 +23,12 @@
                 <option value="">Todas as Situações</option>
                 <option value="CONCLUIDO">Concluído</option>
                 <option value="PENDENTE">Pendente</option>
-                <option value="PAGO">Pago</option>
             </select>
             <button id="btn-limpar-filtros" style="padding: 8px 16px; background-color: #f0f0f0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">Limpar</button>
-            <button id="btn-exportar-todos" style="padding: 8px 16px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Todos)</button>
-            <button id="btn-exportar-filtrados" style="padding: 8px 16px; background-color: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Filtrados)</button>
+            <button id="btn-exportar-todos" style="white-space: nowrap; padding: 8px 16px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Todos)</button>
+            <button id="btn-exportar-filtrados" style="white-space: nowrap; padding: 8px 16px; background-color: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">PDF (Filtrados)</button>
+            <button id="btn-email-todos" style="white-space: nowrap; padding: 8px 16px; background-color: #607d8b; color: white; border: none; border-radius: 4px; cursor: pointer;">Enviar Email a Todos</button>
+            <button id="btn-email-filtrados" style="white-space: nowrap; padding: 8px 16px; background-color: #607d8b; color: white; border: none; border-radius: 4px; cursor: pointer;">Enviar Email Filtrado</button>
         </div>
         <table>
             <thead>
@@ -70,7 +71,6 @@
                     <select id="form-situacao" required>
                         <option value="CONCLUIDO">Concluído</option>
                         <option value="PENDENTE">Pendente</option>
-                        <option value="PAGO">Pago</option>
                     </select>
                 </div>
                 <div class="modal-actions">
