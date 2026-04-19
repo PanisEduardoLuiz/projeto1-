@@ -1,9 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Verifica se o usuário está logado ---
+    const usuarioStr = localStorage.getItem('usuario');
+    if (!usuarioStr) {
+        window.location.href = 'index.html';
+        return;
+    }
+    const usuarioLogado = JSON.parse(usuarioStr);
+
+    // Exibe o nome do usuário no topo
+    const spanNome = document.getElementById('usuario-nome');
+    if (spanNome) {
+        spanNome.textContent = `Olá, ${usuarioLogado.nome}`;
+    }
+
+    // Botão de logout
+    document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('usuario');
+        window.location.href = 'index.html';
+    });
+
+    // --- Lógica de Tema (Dark Mode) ---
+    const btnTema = document.getElementById('btn-tema');
+    const aplicarTema = (tema) => {
+        if (tema === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+            if (btnTema) btnTema.textContent = '🌙';
+        } else {
+            document.body.removeAttribute('data-theme');
+            if (btnTema) btnTema.textContent = '☀️';
+        }
+    };
+
+    // Carrega tema salvo
+    const temaSalvo = localStorage.getItem('theme') || 'light';
+    aplicarTema(temaSalvo);
+
+    if (btnTema) {
+        btnTema.addEventListener('click', () => {
+            const novoTema = document.body.hasAttribute('data-theme') ? 'light' : 'dark';
+            localStorage.setItem('theme', novoTema);
+            aplicarTema(novoTema);
+        });
+    }
+
     let todosLancamentos = [];
     let dadosAtuaisFiltrados = [];
     const corpoTabela = document.getElementById('tabela-corpo');
     const filtroDescricao = document.getElementById('filtro-descricao');
-    const filtroData = document.getElementById('filtro-data');
+    const filtroDataInicio = document.getElementById('filtro-data-inicio');
+    const filtroDataFim = document.getElementById('filtro-data-fim');
     const filtroTipo = document.getElementById('filtro-tipo');
     const filtroSituacao = document.getElementById('filtro-situacao');
     const btnLimpar = document.getElementById('btn-limpar-filtros');
@@ -59,14 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function aplicarFiltros() {
         const textoDescricao = filtroDescricao.value.toLowerCase();
-        const dataSelecionada = filtroData.value;
+        const dataInicio = filtroDataInicio.value;
+        const dataFim = filtroDataFim.value;
         const tipoSelecionado = filtroTipo.value;
         const situacaoSelecionada = filtroSituacao.value;
 
         dadosAtuaisFiltrados = todosLancamentos.filter(lanc => {
             const dataLancamentoYYYYMMDD = new Date(lanc.data_lancamento).toISOString().split('T')[0];
             const matchDescricao = lanc.descricao.toLowerCase().includes(textoDescricao);
-            const matchData = dataSelecionada === '' || dataLancamentoYYYYMMDD === dataSelecionada;
+            
+            // Lógica de período
+            let matchData = true;
+            if (dataInicio && dataLancamentoYYYYMMDD < dataInicio) matchData = false;
+            if (dataFim && dataLancamentoYYYYMMDD > dataFim) matchData = false;
+
             const matchTipo = tipoSelecionado === '' || lanc.tipo_lancamento === tipoSelecionado;
             const matchSituacao = situacaoSelecionada === '' || lanc.situacao === situacaoSelecionada;
 
@@ -77,13 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     filtroDescricao.addEventListener('input', aplicarFiltros);
-    filtroData.addEventListener('input', aplicarFiltros);
+    filtroDataInicio.addEventListener('input', aplicarFiltros);
+    filtroDataFim.addEventListener('input', aplicarFiltros);
     filtroTipo.addEventListener('change', aplicarFiltros);
     filtroSituacao.addEventListener('change', aplicarFiltros);
 
     btnLimpar.addEventListener('click', () => {
         filtroDescricao.value = '';
-        filtroData.value = '';
+        filtroDataInicio.value = '';
+        filtroDataFim.value = '';
         filtroTipo.value = '';
         filtroSituacao.value = '';
         aplicarFiltros();
@@ -122,11 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-exportar-filtrados').addEventListener('click', () => {
         const textoDescricao = filtroDescricao.value.trim();
-        const dataSelecionada = filtroData.value;
+        const dataInicio = filtroDataInicio.value;
+        const dataFim = filtroDataFim.value;
         const tipoSelecionado = filtroTipo.value;
         const situacaoSelecionada = filtroSituacao.value;
 
-        if (!textoDescricao && !dataSelecionada && !tipoSelecionado && !situacaoSelecionada) {
+        if (!textoDescricao && !dataInicio && !dataFim && !tipoSelecionado && !situacaoSelecionada) {
             alert('Você precisa aplicar pelo menos um filtro antes de baixar o relatório filtrado.');
             return;
         }
@@ -136,8 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Lógica de Envio de E-mail ----
     async function enviarPDFEmail(dados, titulo, comFiltros = false) {
-        const destino = prompt('Para qual e-mail deseja enviar o relatório?');
-        if (!destino) return; // cancelou
+        const destino = prompt(
+            'Para qual e-mail deseja enviar o relatório?\n\nPara vários destinatários, separe por vírgula:',
+            usuarioLogado.email // Sugere o e-mail do usuário logado
+        );
+        if (!destino || !destino.trim()) return;
 
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -163,14 +220,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const resp = await fetch('/api/email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pdfBase64: pdfDataUri, emailDestino: destino, assunto: titulo, comFiltros })
+                body: JSON.stringify({
+                    pdfBase64: pdfDataUri,
+                    emailDestino: destino,
+                    assunto: titulo,
+                    comFiltros,
+                    nomeRemetente: usuarioLogado.nome
+                })
             });
 
             if (resp.ok) {
                 const result = await resp.json();
-                alert(result.message || 'E-mail enviado com sucesso para o destinatário!');
+                alert(result.message || 'E-mail enviado com sucesso!');
             } else {
-                alert('Falha interna ao tentar processar o e-mail.');
+                const errData = await resp.json().catch(() => null);
+                alert(errData?.error || 'Falha interna ao tentar processar o e-mail.');
             }
         } catch (err) {
             console.error(err);
@@ -184,11 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-email-filtrados').addEventListener('click', () => {
         const textoDescricao = filtroDescricao.value.trim();
-        const dataSelecionada = filtroData.value;
+        const dataInicio = filtroDataInicio.value;
+        const dataFim = filtroDataFim.value;
         const tipoSelecionado = filtroTipo.value;
         const situacaoSelecionada = filtroSituacao.value;
 
-        if (!textoDescricao && !dataSelecionada && !tipoSelecionado && !situacaoSelecionada) {
+        if (!textoDescricao && !dataInicio && !dataFim && !tipoSelecionado && !situacaoSelecionada) {
             alert('Você precisa aplicar pelo menos um filtro antes de enviar o relatório filtrado.');
             return;
         }

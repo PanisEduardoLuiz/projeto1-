@@ -1,11 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-// Inicializa o Resend com a chave do .env
-const resend = new Resend(process.env.RESEND_API_KEY);
-const EMAIL_PADRAO = 'luiz.panis@universo.univates.br';
+// Configura o transporte SMTP do Gmail
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASS,
+    },
+});
+
+const EMAIL_PADRAO = process.env.GMAIL_USER; // envia notificações para o próprio email
 
 // Rota GET: Buscar todos os lançamentos
 router.get('/', async (req, res) => {
@@ -32,8 +39,8 @@ router.post('/', async (req, res) => {
     // Tenta enviar o e-mail de alerta não bloqueante (não impede o response em caso de falha)
     try {
         const valorFormatado = Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        await resend.emails.send({
-            from: 'Notificações <onboarding@resend.dev>',
+        await transporter.sendMail({
+            from: `Notificações <${process.env.GMAIL_USER}>`,
             to: EMAIL_PADRAO,
             subject: 'Novo Lançamento Criado',
             html: `<p>Um novo lançamento foi criado no sistema.</p>
@@ -94,8 +101,8 @@ router.put('/:id', async (req, res) => {
                 infoAlteracoes += `<li><strong>Situação:</strong> ${situacao}</li>`;
             }
 
-            await resend.emails.send({
-                from: 'Notificações <onboarding@resend.dev>',
+            await transporter.sendMail({
+                from: `Notificações <${process.env.GMAIL_USER}>`,
                 to: EMAIL_PADRAO,
                 subject: 'Lançamento Editado',
                 html: `<p>O lançamento <strong>${descricao}</strong> (ID: ${id}) foi editado.</p>

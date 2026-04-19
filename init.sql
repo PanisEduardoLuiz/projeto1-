@@ -1,12 +1,16 @@
 CREATE TABLE IF NOT EXISTS usuario (
-    id SERIAL PRIMARY KEY, nome VARCHAR(100), login VARCHAR(50), senha VARCHAR(50), situacao VARCHAR(20)
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    senha VARCHAR(100) NOT NULL,
+    situacao VARCHAR(20) DEFAULT 'ATIVO'
 );
 
 CREATE TABLE IF NOT EXISTS lancamento (
     id SERIAL PRIMARY KEY, descricao VARCHAR(100), data_lancamento DATE, valor NUMERIC(10,2), tipo_lancamento VARCHAR(20), situacao VARCHAR(20)
 );
 
-INSERT INTO usuario (nome, login, senha, situacao) VALUES ('Admin', 'admin', '123456', 'ATIVO');
+INSERT INTO usuario (nome, email, senha, situacao) VALUES ('Administrador', 'admin', 'admin123', 'ATIVO');
 
 INSERT INTO lancamento (descricao, data_lancamento, valor, tipo_lancamento, situacao) VALUES
 ('Salário', '2026-03-05', 5000.00, 'RECEITA', 'CONCLUIDO'),

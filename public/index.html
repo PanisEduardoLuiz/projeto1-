@@ -11,15 +11,16 @@
         <form id="login-form">
             <h2>Acessar Sistema</h2>
             <div class="input-group">
-                <label for="usuario">Usuário</label>
-                <input type="text" id="usuario" name="usuario" required placeholder="Digite 'admin'">
+                <label for="email">Usuário ou E-mail</label>
+                <input type="text" id="email" name="email" required placeholder="admin ou seu@email.com">
             </div>
             <div class="input-group">
                 <label for="senha">Senha</label>
-                <input type="password" id="senha" name="senha" required placeholder="Digite 'admin123'">
+                <input type="password" id="senha" name="senha" required placeholder="Sua senha">
             </div>
             <button type="submit">Entrar</button>
             <p id="mensagem-erro" class="erro"></p>
+            <p class="link-login">Não tem conta? <a href="cadastro.html">Criar conta</a></p>
         </form>
     </div>
     <script src="login.js"></script>
