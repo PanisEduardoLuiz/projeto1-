@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+!.env.homolog.example
+!.env.prod.example
+.git
+.gitignore
+docs
+tests
+public/emails_enviados
+*.md
+.pm2

@@ -1,0 +1,105 @@
+# Etapa 4 — Integração contínua: testes (20), qualidade e estatísticas
+name: CI
+
+on:
+  push:
+    branches: [main, versao-organizada]
+  pull_request:
+    branches: [main, versao-organizada]
+
+jobs:
+  integracao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: "123"
+          POSTGRES_DB: financas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin -d financas"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: ci
+      NODE_ENV: test
+      PORT: "8080"
+      HOST: "127.0.0.1"
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: admin
+      DB_PASSWORD: "123"
+      DB_NAME: financas
+      GMAIL_USER: ci@example.com
+      GMAIL_APP_PASS: ci-placeholder
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Qualidade de código (ESLint)
+        run: npm run lint
+
+      - name: Migrações do banco
+        run: npm run migrate
+
+      - name: Subir API para testes
+        run: |
+          npm start &
+          echo $! > server.pid
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8080/api/lancamentos > /dev/null; then
+              echo "API pronta após ${i}s"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API não respondeu a tempo"
+          exit 1
+
+      - name: Executar 20 testes automatizados
+        run: |
+          mkdir -p test-results
+          node --test \
+            --test-reporter=spec \
+            --test-reporter=junit \
+            --test-reporter-destination=stdout \
+            --test-reporter-destination=test-results/junit.xml \
+            tests/api.test.js 2>&1 | tee test-results/output.txt
+
+      - name: Estatísticas dos testes
+        if: always()
+        run: node scripts/ci-test-summary.js
+
+      - name: Publicar relatório de testes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            test-results/junit.xml
+            test-results/output.txt
+            test-results/summary.json
+
+      - name: Encerrar servidor
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill "$(cat server.pid)" 2>/dev/null || true
+          fi

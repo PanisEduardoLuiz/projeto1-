@@ -1,0 +1,35 @@
+name: financas-prod
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: db_financas_prod
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: financas_prod
+    ports:
+      - "15434:5432"
+    volumes:
+      - prod_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d financas_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: app_financas_prod
+    restart: always
+    env_file:
+      - .env.prod
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  prod_pgdata:

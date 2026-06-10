@@ -1,0 +1,35 @@
+name: financas-homolog
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: db_financas_homolog
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: financas_homolog
+    ports:
+      - "15433:5432"
+    volumes:
+      - homolog_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d financas_homolog"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: app_financas_homolog
+    restart: always
+    env_file:
+      - .env.homolog
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  homolog_pgdata:

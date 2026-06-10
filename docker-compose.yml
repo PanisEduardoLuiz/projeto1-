@@ -1,4 +1,6 @@
-version: '3.8'
+# Desenvolvimento local: só o banco. App com "npm start" na máquina.
+name: financas-dev
+
 services:
   db:
     image: postgres:15-alpine
@@ -11,4 +13,12 @@ services:
     ports:
       - "15432:5432"
     volumes:
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d financas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  dev_pgdata:
