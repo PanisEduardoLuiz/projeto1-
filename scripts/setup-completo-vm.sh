@@ -32,12 +32,18 @@ docker_cmd() {
 }
 
 compose_cmd() {
-  if docker compose version &>/dev/null 2>&1; then
-    docker compose "$@"
-  elif docker-compose version &>/dev/null 2>&1; then
-    docker-compose "$@"
+  if ! docker info &>/dev/null 2>&1; then
+    if sudo docker compose version &>/dev/null 2>&1; then
+      sudo docker compose "$@"
+    else
+      sudo docker-compose "$@"
+    fi
   else
-    sudo docker compose "$@"
+    if docker compose version &>/dev/null 2>&1; then
+      docker compose "$@"
+    else
+      docker-compose "$@"
+    fi
   fi
 }
 
@@ -69,6 +75,8 @@ ensure_repo() {
     log "Atualizando repositório em $REMOTE_DIR"
     cd "$REMOTE_DIR"
     git fetch origin
+    git reset --hard "origin/$BRANCH"
+    git clean -fd
     git checkout "$BRANCH"
     git pull origin "$BRANCH"
   else
