@@ -149,6 +149,14 @@ main() {
   log "Rodando migrações do Banco Local..."
   node scripts/migrate.js
 
+  log "Reiniciando a API de Dev (8080) no PM2..."
+  if command -v pm2 &>/dev/null; then
+    pm2 restart financas-api || pm2 start server.js --name "financas-api"
+    pm2 save
+  else
+    log "Aviso: PM2 não instalado. Pulei o reinício automático da 8080."
+  fi
+
   deploy_stack "docker-compose.homolog.yml" "Homologação (8081)"
   deploy_stack "docker-compose.prod.yml" "Produção (8082)"
 
