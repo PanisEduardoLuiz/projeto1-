@@ -136,10 +136,18 @@ main() {
 
   write_env_file ".env.homolog" ".env.homolog.example"
   write_env_file ".env.prod" ".env.prod.example"
+  write_env_file ".env" ".env.example"
 
   if [ -z "$GMAIL_USER" ] || [ -z "$GMAIL_APP_PASS" ]; then
     log "GMAIL não informado por variável — use .env.homolog / .env.prod já existentes."
   fi
+
+  log "Subindo Banco Local/Dev (porta 15432)..."
+  compose_cmd -f "docker-compose.yml" up -d
+  log "Instalando pacotes Node (necessário para o migrate local)..."
+  npm install --no-fund --no-audit
+  log "Rodando migrações do Banco Local..."
+  node scripts/migrate.js
 
   deploy_stack "docker-compose.homolog.yml" "Homologação (8081)"
   deploy_stack "docker-compose.prod.yml" "Produção (8082)"
