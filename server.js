@@ -26,3 +26,5 @@ app.listen(port, host, () => {
   const env = process.env.APP_ENV || process.env.NODE_ENV || 'development';
   console.log(`Servidor rodando em http://${host}:${port} [${env}]`);
 });
+
+funcaoQueNaoExiste(); TESTE DE QUALIDADE
