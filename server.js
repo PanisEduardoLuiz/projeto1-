@@ -27,4 +27,4 @@ app.listen(port, host, () => {
   console.log(`Servidor rodando em http://${host}:${port} [${env}]`);
 });
 
-//funcaoQueNaoExiste(); TESTE DE QUALIDADE
+funcaoQueNaoExiste(); TESTE DE QUALIDADE
