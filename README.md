@@ -12,6 +12,58 @@ Este projeto é um sistema de lançamentos financeiros (Receitas e Despesas) equ
 
 ---
 
+## 🏗️ Arquitetura e Contêineres
+
+Abaixo está o fluxograma que demonstra como as tecnologias se conectam e como os contêineres do Docker estão estruturados dentro do servidor para os ambientes de Homologação e Produção. O GitHub renderiza este diagrama automaticamente.
+
+```mermaid
+graph TD
+    %% Estilos
+    classDef user fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    classDef nodejs fill:#68A063,stroke:#fff,color:#fff;
+    classDef postgres fill:#336791,stroke:#fff,color:#fff;
+    classDef docker fill:#2496ED,stroke:#fff,color:#fff;
+    classDef github fill:#181717,stroke:#fff,color:#fff;
+
+    Cliente([👨‍💻 Usuários e Testadores]):::user
+    
+    subgraph GitHub_Actions [CI/CD - GitHub Actions]
+        Push[Push de Código] --> Testes[🧪 Testes Nativos Node]
+        Testes --> ESLint[🔍 ESLint]
+        ESLint --> Build[🐳 Build Imagem Docker]
+    end
+
+    Cliente --> |Acesso Web HTTP/HTTPS| Roteador{Roteador / Servidor Host}
+
+    subgraph Servidor [Servidor Físico / Cloud]
+        
+        Roteador --> |Porta 8081| AppHomolog
+        Roteador --> |Porta 8082| AppProd
+
+        subgraph Homologacao [🛠️ Ambiente de Homologação]
+            AppHomolog["📦 app_financas_homolog<br>(Node.js + Express)"]:::nodejs
+            DBHomolog[("🗄️ db_financas_homolog<br>(PostgreSQL 15)")]:::postgres
+            
+            AppHomolog --> |Driver 'pg'| DBHomolog
+            AppHomolog -.-> |Usa| MailH(Nodemailer)
+            AppHomolog -.-> |Lê| EnvH(.env.homolog)
+        end
+
+        subgraph Producao [🚀 Ambiente de Produção]
+            AppProd["📦 app_financas_prod<br>(Node.js + Express)"]:::nodejs
+            DBProd[("🗄️ db_financas_prod<br>(PostgreSQL 15)")]:::postgres
+            
+            AppProd --> |Driver 'pg'| DBProd
+            AppProd -.-> |Usa| MailP(Nodemailer)
+            AppProd -.-> |Lê| EnvP(.env.prod)
+        end
+    end
+
+    Build -.-> |Faz o Deploy| Servidor
+```
+
+---
+
 ## 🔑 Configuração do Envio de E-mail (Gmail SMTP)
 
 O sistema utiliza o transporte SMTP do Gmail para disparar e-mails. Para configurar:
