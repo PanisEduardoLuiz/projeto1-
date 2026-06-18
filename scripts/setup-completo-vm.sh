@@ -136,25 +136,9 @@ main() {
 
   write_env_file ".env.homolog" ".env.homolog.example"
   write_env_file ".env.prod" ".env.prod.example"
-  write_env_file ".env" ".env.example"
 
   if [ -z "$GMAIL_USER" ] || [ -z "$GMAIL_APP_PASS" ]; then
     log "GMAIL não informado por variável — use .env.homolog / .env.prod já existentes."
-  fi
-
-  log "Subindo Banco Local/Dev (porta 15432)..."
-  compose_cmd -f "docker-compose.yml" up -d
-  log "Instalando pacotes Node (necessário para o migrate local)..."
-  npm install --no-fund --no-audit
-  log "Rodando migrações do Banco Local..."
-  node scripts/migrate.js
-
-  log "Reiniciando a API de Dev (8080) no PM2..."
-  if command -v pm2 &>/dev/null; then
-    pm2 restart financas-api || pm2 start server.js --name "financas-api"
-    pm2 save
-  else
-    log "Aviso: PM2 não instalado. Pulei o reinício automático da 8080."
   fi
 
   deploy_stack "docker-compose.homolog.yml" "Homologação (8081)"
