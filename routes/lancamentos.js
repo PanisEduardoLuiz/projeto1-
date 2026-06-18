@@ -17,7 +17,7 @@ const EMAIL_PADRAO = process.env.GMAIL_USER; // envia notificações para o pró
 // Rota GET: Buscar todos os lançamentos
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM lancamento ORDER BY data_lancamento DESC');
+    const result = await pool.query('SELECT * FROM lancamento ORDER BY id ASC');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
