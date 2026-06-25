@@ -27,4 +27,6 @@ app.listen(port, host, () => {
   console.log(`Servidor rodando em http://${host}:${port} [${env}]`);
 });
 
-funcaoQueNaoExiste(); TESTE DE QUALIDADE
+// TESTE DE QUALIDADE: Simulando a chamada de uma função de segurança que "esqueceu" de ser criada
+// Isso gerará um erro do tipo "ReferenceError: validarSeguranca is not defined" e derrubará o sistema.
+validarSeguranca();
