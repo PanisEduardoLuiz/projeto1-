@@ -29,4 +29,4 @@ app.listen(port, host, () => {
 
 // TESTE DE QUALIDADE: Simulando a chamada de uma função de segurança que "esqueceu" de ser criada
 // Isso gerará um erro do tipo "ReferenceError: validarSeguranca is not defined" e derrubará o sistema.
-validarSeguranca();
+//validarSeguranca();
