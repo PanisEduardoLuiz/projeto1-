@@ -144,3 +144,10 @@ Se for rodar o projeto de forma persistente em uma VM:
 - Ver Logs: `pm2 logs financas-api`
 - Reiniciar: `pm2 restart financas-api`
 - Parar: `pm2 stop financas-api`
+
+
+
+---------------------------------------------------------------------------
+o banco possui uma tabela de histórico. Toda vez que fazemos um deploy, o nosso script checa esse histórico e executa apenas os arquivos de banco de dados novos que ainda não foram aplicados.
+
+Isso significa que o banco se atualiza sozinho e de forma totalmente automática, com a garantia de que nós nunca vamos apagar ou perder os dados que já estão em Produção."
